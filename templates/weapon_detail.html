@@ -109,30 +109,44 @@
         </form>
 
         {% if ip.remaining_credits > 0 %}
-        <h6>Day {{ ip.day_count + 1 }} — Daily Roll</h6>
-        <form method="POST" action="{{ url_for('roll_day', weapon_id=weapon.id) }}"
-              class="d-flex align-items-end gap-3 mb-4">
-          <div>
-            <label class="form-label mb-1 small">d20 roll</label>
-            <input type="number" name="d20_roll" class="form-control bg-dark text-light border-secondary"
-                   min="1" max="20" style="width: 90px" required>
-          </div>
-          <button class="btn btn-warning">Submit Roll</button>
-        </form>
+        <h6 class="text-white">Day {{ ip.day_count + 1 }} — Daily Check</h6>
+        <div class="d-flex gap-3 align-items-end mb-4 flex-wrap">
+          <form method="POST" action="{{ url_for('roll_day', weapon_id=weapon.id) }}"
+                class="d-flex align-items-end gap-2">
+            <div>
+              <label class="form-label mb-1 small text-white opacity-75">Roll d20</label>
+              <input type="number" name="d20_roll" class="form-control bg-dark text-white border-secondary"
+                     min="1" max="20" style="width: 90px" required>
+            </div>
+            <button class="btn btn-warning">Submit Roll</button>
+          </form>
+          <form method="POST" action="{{ url_for('roll_day', weapon_id=weapon.id) }}">
+            <input type="hidden" name="d20_roll" value="10">
+            <label class="form-label mb-1 small text-white opacity-75 d-block">Or</label>
+            <button class="btn btn-outline-warning">Take 10</button>
+          </form>
+        </div>
 
         {% else %}
         <div class="alert alert-success py-2 mb-3">
           Work complete! Make your final functionality check.
         </div>
-        <form method="POST" action="{{ url_for('final_check', weapon_id=weapon.id) }}"
-              class="d-flex align-items-end gap-3 mb-4">
-          <div>
-            <label class="form-label mb-1 small">Final check d20 roll</label>
-            <input type="number" name="d20_final" class="form-control bg-dark text-light border-secondary"
-                   min="1" max="20" style="width: 90px" required>
-          </div>
-          <button class="btn btn-success">Make Final Check</button>
-        </form>
+        <div class="d-flex gap-3 align-items-end mb-4 flex-wrap">
+          <form method="POST" action="{{ url_for('final_check', weapon_id=weapon.id) }}"
+                class="d-flex align-items-end gap-2">
+            <div>
+              <label class="form-label mb-1 small text-white opacity-75">Roll d20</label>
+              <input type="number" name="d20_final" class="form-control bg-dark text-white border-secondary"
+                     min="1" max="20" style="width: 90px" required>
+            </div>
+            <button class="btn btn-success">Make Final Check</button>
+          </form>
+          <form method="POST" action="{{ url_for('final_check', weapon_id=weapon.id) }}">
+            <input type="hidden" name="d20_final" value="10">
+            <label class="form-label mb-1 small text-white opacity-75 d-block">Or</label>
+            <button class="btn btn-outline-success">Take 10 Final Check</button>
+          </form>
+        </div>
         {% endif %}
 
         <form method="POST" action="{{ url_for('abandon_mod', weapon_id=weapon.id) }}"

@@ -167,35 +167,10 @@ def start_mod(weapon_id):
     if request.method == "POST":
         mod = Mod(request.form["mod"])
         skill_modifier = int(request.form["skill_modifier"])
-        take_10 = request.form.get("take_10") == "on"
         synergy_bonus = request.form.get("synergy_bonus") == "on"
         mastercraft_bonus = request.form.get("mastercraft_bonus") == "on"
         no_tools_penalty = request.form.get("no_tools_penalty") == "on"
 
-        if take_10:
-            result = plan_modification_take10(
-                weapon=weapon.to_rules_weapon(),
-                mod=mod,
-                skill_modifier=skill_modifier,
-                synergy_bonus=synergy_bonus,
-                mastercraft_bonus=mastercraft_bonus,
-                no_tools_penalty=no_tools_penalty,
-            )
-            if not result.success:
-                flash(f"Cannot apply modification: {result.reason}")
-                return redirect(url_for("start_mod", weapon_id=weapon_id))
-            return render_template(
-                "confirm_take10.html",
-                weapon=weapon,
-                result=result,
-                mod=mod,
-                skill_modifier=skill_modifier,
-                synergy_bonus=synergy_bonus,
-                mastercraft_bonus=mastercraft_bonus,
-                no_tools_penalty=no_tools_penalty,
-            )
-
-        # Rolling: persist in-progress state
         dc = WEAPON_LIMITS[weapon.weapon_type]["dc"]
         target_price = int(weapon.base_cost * (1 + 0.5 * (weapon.mod_count + 1)))
         ip = DBInProgressMod(
@@ -212,7 +187,7 @@ def start_mod(weapon_id):
         )
         db.session.add(ip)
         db.session.commit()
-        flash("Modification started. Enter your daily roll each session.")
+        flash("Modification started. Make a daily check each session — roll or take 10.")
         return redirect(url_for("weapon_detail", weapon_id=weapon_id))
 
     rules_weapon = weapon.to_rules_weapon()
@@ -225,15 +200,6 @@ def start_mod(weapon_id):
         ONCE_PER_WEAPON=ONCE_PER_WEAPON,
     )
 
-
-@app.route("/weapon/<int:weapon_id>/mod/confirm_take10", methods=["POST"])
-def confirm_take10(weapon_id):
-    weapon = db.get_or_404(DBWeapon, weapon_id)
-    mod_name = request.form["mod"]
-    db.session.add(DBAppliedMod(weapon_id=weapon.id, mod_name=mod_name))
-    db.session.commit()
-    flash("Modification applied successfully!")
-    return redirect(url_for("weapon_detail", weapon_id=weapon_id))
 
 
 @app.route("/weapon/<int:weapon_id>/mod/skill", methods=["POST"])

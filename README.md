@@ -77,7 +77,7 @@ Each day, make a skill check (Repair or appropriate Craft) against the weapon's 
 - **Failure:** no progress that day
 - Work is complete when accumulated progress ≥ modified price
 
-**Taking 10** is allowed. Taking 20 is not.
+Each day's check is tracked individually. On the weapon detail page you can either enter your d20 roll or click **Take 10** — the choice is made per day, not locked in at the start. Taking 20 is not allowed.
 
 ### Situational Modifiers
 
