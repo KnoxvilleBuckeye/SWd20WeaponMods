@@ -2,7 +2,7 @@
 
 > **Fan Project Disclaimer:** This is an unofficial fan tool. *Star Wars* is the property of Disney/Lucasfilm Ltd. The *Star Wars Roleplaying Game* is published by Wizards of the Coast under license from Lucasfilm. This project is not affiliated with or endorsed by Disney, Lucasfilm, or Wizards of the Coast. No commercial use is intended or made.
 
-A tool for calculating and tracking weapon modifications from the *Star Wars Roleplaying Game* Hero's Guide & Equipment Guide (d20 system). Implements the full modification rules including daily progress rolls, skill bonuses, and in-progress state persistence across sessions.
+A tool for calculating and tracking weapon modifications from the *Star Wars Roleplaying Game* (d20 system). Implements the full modification rules including daily progress rolls, skill bonuses, and in-progress state persistence across sessions.
 
 ## Running with Docker
 
@@ -115,7 +115,9 @@ requirements.txt
 
 ## Rules Reference
 
-*Star Wars Roleplaying Game: Hero's Guide & Equipment Guide*, Chapter 1 — Customizing and Personalizing Weapons.
+- *Star Wars Roleplaying Game Revised Core Rulebook*
+- *Hero's Guide*
+- *Arms and Equipment Guide*, Chapter 1 — Customizing and Personalizing Weapons
 
 ## Legal
 
