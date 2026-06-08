@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-4">New Weapon</h2>
+
+<form method="POST" style="max-width: 520px">
+  <div class="mb-3">
+    <label class="form-label">Weapon Name</label>
+    <input type="text" name="name" class="form-control bg-dark text-light border-secondary" placeholder="e.g. Han's DL-44" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Weapon Type</label>
+    <select name="weapon_type" class="form-select bg-dark text-light border-secondary" required>
+      {% for wtype, limits in weapon_types.items() %}
+        {% if limits.dc is not none %}
+        <option value="{{ wtype }}">
+          {{ wtype.title() }} — DC {{ limits.dc }},
+          max {{ limits.custom }} custom / {{ limits.personal }} personal
+        </option>
+        {% endif %}
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Base Cost (credits)</label>
+    <input type="number" name="base_cost" class="form-control bg-dark text-light border-secondary" min="1" placeholder="500" required>
+  </div>
+
+  <div class="mb-4 form-check">
+    <input type="checkbox" name="personalized" class="form-check-input" id="personalized">
+    <label class="form-check-label" for="personalized">
+      Personalized <span class="text-muted">(tailored to one user; others see base stats)</span>
+    </label>
+  </div>
+
+  <button type="submit" class="btn btn-warning">Create</button>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}

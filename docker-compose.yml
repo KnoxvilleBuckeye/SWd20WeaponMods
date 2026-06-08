@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:5000"
+    volumes:
+      - ./data:/app/data
+      - ./templates:/app/templates
+    environment:
+      - DATABASE_URL=sqlite:////app/data/weapons.db
+    restart: unless-stopped

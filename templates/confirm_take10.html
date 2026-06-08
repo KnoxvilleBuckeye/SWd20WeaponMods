@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-1">Confirm Modification</h2>
+<p class="text-muted mb-4">{{ weapon.name }}</p>
+
+<div class="card bg-secondary bg-opacity-10 border-secondary mb-4" style="max-width: 460px">
+  <div class="card-body">
+    <h5 class="text-warning">{{ mod.value.replace('_', ' ').title() }}</h5>
+    <p class="text-muted small">{{ result.stat_change }}</p>
+    <dl class="row small mb-0">
+      <dt class="col-7">Modified price</dt>      <dd class="col-5">{{ result.modified_price }} cr</dd>
+      <dt class="col-7">Materials cost</dt>      <dd class="col-5">{{ result.material_cost }} cr</dd>
+      <dt class="col-7">Skill DC</dt>            <dd class="col-5">{{ result.dc }}</dd>
+      <dt class="col-7">Take-10 check result</dt><dd class="col-5">{{ result.check_result }}</dd>
+      <dt class="col-7">Daily progress</dt>      <dd class="col-5">{{ result.daily_progress }} cr/day</dd>
+      <dt class="col-7">Days required</dt>       <dd class="col-5">{{ result.days_required }}</dd>
+    </dl>
+  </div>
+</div>
+
+<p class="small text-muted">
+  Taking 10 on the final check also succeeds ({{ result.check_result }} &ge; DC {{ result.dc }}).
+  Confirm to apply the modification and spend {{ result.days_required }} in-game days.
+</p>
+
+<form method="POST" action="{{ url_for('confirm_take10', weapon_id=weapon.id) }}">
+  <input type="hidden" name="mod" value="{{ mod.value }}">
+  <button type="submit" class="btn btn-success">Confirm &amp; Apply</button>
+  <a href="{{ url_for('weapon_detail', weapon_id=weapon.id) }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}

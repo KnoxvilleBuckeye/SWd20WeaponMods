@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h2 class="mb-1">{{ weapon.name }}</h2>
+    <span class="text-muted">{{ weapon.weapon_type.title() }} &mdash; {{ 'Personalized' if weapon.personalized else 'Customized' }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">← Weapons</a>
+    <form method="POST" action="{{ url_for('delete_weapon', weapon_id=weapon.id) }}"
+          onsubmit="return confirm('Delete {{ weapon.name }}? This cannot be undone.')">
+      <button class="btn btn-outline-danger btn-sm">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  {# Left column: stats + applied mods #}
+  <div class="col-md-4">
+    <div class="card bg-dark border border-secondary mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-warning mb-3">Weapon Stats</h6>
+        <table class="table table-dark table-sm mb-0">
+          <tbody>
+            <tr><td class="text-white opacity-75">Base cost</td>      <td class="text-white fw-semibold">{{ weapon.base_cost }} cr</td></tr>
+            <tr><td class="text-white opacity-75">Modified price</td> <td class="text-white fw-semibold">{{ weapon.modified_price }} cr</td></tr>
+            <tr><td class="text-white opacity-75">Mods applied</td>   <td class="text-white fw-semibold">{{ weapon.mod_count }} / {{ weapon.max_mods }}</td></tr>
+            <tr><td class="text-white opacity-75">Slots remaining</td><td class="text-white fw-semibold">{{ weapon.slots_remaining }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if weapon.applied_mods %}
+    <div class="card bg-dark border border-secondary mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-success mb-3">Applied Modifications</h6>
+        <ul class="list-unstyled mb-0">
+          {% for m in weapon.applied_mods %}
+          <li class="mb-2">
+            <span class="badge bg-success me-1">✓</span>
+            <span class="text-white fw-semibold">{{ m.mod_name.replace('_', ' ').title() }}</span><br>
+            <span class="text-white opacity-75 ms-4">{{ mod_stat_changes[Mod(m.mod_name)] }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if weapon.slots_remaining > 0 and not weapon.in_progress %}
+    <a href="{{ url_for('start_mod', weapon_id=weapon.id) }}" class="btn btn-warning w-100">
+      + Start Modification
+    </a>
+    {% elif weapon.slots_remaining == 0 and not weapon.in_progress %}
+    <div class="alert alert-success py-2">Modification limit reached.</div>
+    {% endif %}
+  </div>
+
+  {# Right column: in-progress mod #}
+  <div class="col-md-8">
+    {% if weapon.in_progress %}
+      {% set ip = weapon.in_progress %}
+      {% set pct = (((ip.target_price - ip.remaining_credits) / ip.target_price) * 100) | int %}
+
+    <div class="card bg-dark border-warning">
+      <div class="card-header bg-warning text-dark fw-bold">
+        Modification In Progress
+      </div>
+      <div class="card-body bg-dark text-light">
+        <h5 class="text-white">{{ ip.mod_name.replace('_', ' ').title() }}</h5>
+        <p class="text-white opacity-75">{{ mod_stat_changes[Mod(ip.mod_name)] }}</p>
+
+        <table class="table table-dark table-sm mb-3">
+          <tbody>
+            <tr><td class="text-white opacity-75">Skill modifier</td><td class="text-white fw-semibold">+{{ ip.skill_modifier }}</td></tr>
+            <tr><td class="text-white opacity-75">Skill DC</td>       <td class="text-white fw-semibold">{{ ip.dc }}</td></tr>
+            <tr><td class="text-white opacity-75">Target price</td>   <td class="text-white fw-semibold">{{ ip.target_price }} cr</td></tr>
+            <tr><td class="text-white opacity-75">Remaining</td>      <td class="text-white fw-semibold">{{ ip.remaining_credits }} cr</td></tr>
+            <tr><td class="text-white opacity-75">Days worked</td>    <td class="text-white fw-semibold">{{ ip.day_count }}</td></tr>
+            {% if ip.synergy_bonus %}
+            <tr><td class="text-white opacity-75">Synergy bonus</td>  <td class="text-success fw-semibold">+2</td></tr>
+            {% endif %}
+            {% if ip.mastercraft_bonus %}
+            <tr><td class="text-white opacity-75">Mastercraft</td>    <td class="text-success fw-semibold">+2</td></tr>
+            {% endif %}
+            {% if ip.no_tools_penalty %}
+            <tr><td class="text-white opacity-75">No tools</td>       <td class="text-danger fw-semibold">&minus;5</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+
+        <div class="progress mb-3" style="height: 22px;">
+          <div class="progress-bar bg-warning" style="width: {{ pct }}%; color: #000; font-weight: bold;">
+            {{ pct }}%
+          </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('update_skill', weapon_id=weapon.id) }}"
+              class="d-flex align-items-end gap-3 mb-4">
+          <div>
+            <label class="form-label mb-1 small text-white opacity-75">Update skill modifier</label>
+            <input type="number" name="skill_modifier" value="{{ ip.skill_modifier }}"
+                   class="form-control bg-dark text-white border-secondary" style="width: 110px" required>
+          </div>
+          <button class="btn btn-outline-light btn-sm">Save</button>
+        </form>
+
+        {% if ip.remaining_credits > 0 %}
+        <h6>Day {{ ip.day_count + 1 }} — Daily Roll</h6>
+        <form method="POST" action="{{ url_for('roll_day', weapon_id=weapon.id) }}"
+              class="d-flex align-items-end gap-3 mb-4">
+          <div>
+            <label class="form-label mb-1 small">d20 roll</label>
+            <input type="number" name="d20_roll" class="form-control bg-dark text-light border-secondary"
+                   min="1" max="20" style="width: 90px" required>
+          </div>
+          <button class="btn btn-warning">Submit Roll</button>
+        </form>
+
+        {% else %}
+        <div class="alert alert-success py-2 mb-3">
+          Work complete! Make your final functionality check.
+        </div>
+        <form method="POST" action="{{ url_for('final_check', weapon_id=weapon.id) }}"
+              class="d-flex align-items-end gap-3 mb-4">
+          <div>
+            <label class="form-label mb-1 small">Final check d20 roll</label>
+            <input type="number" name="d20_final" class="form-control bg-dark text-light border-secondary"
+                   min="1" max="20" style="width: 90px" required>
+          </div>
+          <button class="btn btn-success">Make Final Check</button>
+        </form>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('abandon_mod', weapon_id=weapon.id) }}"
+              onsubmit="return confirm('Abandon this modification? All progress will be lost.')">
+          <button class="btn btn-outline-danger btn-sm">Abandon Modification</button>
+        </form>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="text-muted mt-2">No modification in progress.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

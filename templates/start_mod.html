@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-1">Start Modification</h2>
+<p class="text-muted mb-4">{{ weapon.name }}</p>
+
+<form method="POST" style="max-width: 540px">
+  <div class="mb-3">
+    <label class="form-label">Modification</label>
+    <select name="mod" class="form-select bg-dark text-light border-secondary" required>
+      {% for m in available_mods %}
+      <option value="{{ m.value }}">
+        {{ m.value.replace('_', ' ').title() }}
+        — {{ mod_stat_changes[m] }}
+        {% if m in ONCE_PER_WEAPON %}[once-only]{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Skill Modifier <span class="text-muted">(ranks + INT + misc)</span></label>
+    <input type="number" name="skill_modifier" class="form-control bg-dark text-light border-secondary"
+           style="max-width: 120px" required>
+  </div>
+
+  <div class="mb-3 form-check">
+    <input type="checkbox" name="take_10" class="form-check-input" id="take_10">
+    <label class="form-check-label" for="take_10">
+      Take 10 <span class="text-muted">(deterministic; cannot take 20)</span>
+    </label>
+  </div>
+
+  <hr class="border-secondary my-3">
+  <p class="small text-muted mb-2">Situational modifiers</p>
+
+  <div class="mb-2 form-check">
+    <input type="checkbox" name="synergy_bonus" class="form-check-input" id="synergy_bonus">
+    <label class="form-check-label small" for="synergy_bonus">
+      Synergy bonus <span class="text-success">(+2)</span> — 5+ ranks in both Repair and relevant Craft
+    </label>
+  </div>
+  <div class="mb-2 form-check">
+    <input type="checkbox" name="mastercraft_bonus" class="form-check-input" id="mastercraft_bonus">
+    <label class="form-check-label small" for="mastercraft_bonus">
+      Mastercraft bonus <span class="text-success">(+2)</span> — tech specialist with mastercraft ability assisting
+    </label>
+  </div>
+  <div class="mb-4 form-check">
+    <input type="checkbox" name="no_tools_penalty" class="form-check-input" id="no_tools_penalty">
+    <label class="form-check-label small" for="no_tools_penalty">
+      Missing proper tools <span class="text-danger">(&minus;5)</span>
+    </label>
+  </div>
+
+  <button type="submit" class="btn btn-warning">Start</button>
+  <a href="{{ url_for('weapon_detail', weapon_id=weapon.id) }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}
