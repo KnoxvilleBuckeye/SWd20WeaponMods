@@ -12,6 +12,8 @@ docker compose up --build
 
 Open `http://localhost:8080` in your browser. The SQLite database is saved to `./data/weapons.db` and persists across container restarts.
 
+`app.py`, `swd20weaponmod.py`, and `templates/` are volume-mounted, so changes to those files take effect immediately without rebuilding the image. Only `requirements.txt` or `Dockerfile` changes require `docker compose up --build`.
+
 ## Running without Docker
 
 ```zsh
@@ -81,6 +83,8 @@ Each day, make a skill check (Repair or appropriate Craft) against the weapon's 
 
 Each day's check is tracked individually. On the weapon detail page you can either enter your d20 roll or click **Take 10** — the choice is made per day, not locked in at the start. Taking 20 is not allowed.
 
+Every roll is logged to a roll history table (d20, modifier, situational bonus, total check, DC, result, credits earned, remaining). The history is visible on the weapon detail page while the mod is in progress and remains accessible via the expandable history on each completed mod.
+
 ### Situational Modifiers
 
 | Condition                                          | Modifier |
@@ -97,9 +101,11 @@ When daily work is complete, make one final skill check at the same DC:
 - **Failure** — all time, money, and effort lost
 - **Failure by 5+** — weapon damaged; must be repaired before use
 
-### Leveling Up Mid-Modification
+### Skill Modifier
 
-If a character's Repair skill increases during a modification (e.g. leveling up), the skill modifier can be updated on the weapon detail page. This only affects future daily rolls — past progress already accumulated is preserved.
+The weapon detail page has a **Skill Modifier** field (left column) that stores the character's Repair / Craft modifier for that weapon. It pre-populates when starting a new modification and persists between mods.
+
+If a character levels up mid-modification, update the modifier there — it takes effect on the next daily roll and does not affect accumulated progress.
 
 ## Project Structure
 
