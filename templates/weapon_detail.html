@@ -33,16 +33,73 @@
       </div>
     </div>
 
+    <div class="card bg-dark border border-secondary mb-3">
+      <div class="card-body">
+        <h6 class="card-title text-info mb-3">Skill Modifier</h6>
+        <form method="POST" action="{{ url_for('update_weapon_skill', weapon_id=weapon.id) }}"
+              class="d-flex align-items-end gap-2">
+          <div>
+            <label class="form-label mb-1 small text-white opacity-75">Repair / Craft (ranks + INT + misc)</label>
+            <input type="number" name="skill_modifier" value="{{ weapon.skill_modifier }}"
+                   class="form-control bg-dark text-white border-secondary" style="width: 110px" required>
+          </div>
+          <button class="btn btn-outline-info btn-sm">Save</button>
+        </form>
+      </div>
+    </div>
+
     {% if weapon.applied_mods %}
     <div class="card bg-dark border border-secondary mb-3">
       <div class="card-body">
         <h6 class="card-title text-success mb-3">Applied Modifications</h6>
         <ul class="list-unstyled mb-0">
           {% for m in weapon.applied_mods %}
+          {% set m_rolls = roll_history.get(m.mod_name, []) %}
           <li class="mb-2">
             <span class="badge bg-success me-1">✓</span>
             <span class="text-white fw-semibold">{{ m.mod_name.replace('_', ' ').title() }}</span><br>
             <span class="text-white opacity-75 ms-4">{{ mod_stat_changes[Mod(m.mod_name)] }}</span>
+            {% if m_rolls %}
+            <div class="ms-4 mt-1">
+              <a class="text-white opacity-50 small" data-bs-toggle="collapse"
+                 href="#rolls-{{ m.id }}" style="cursor:pointer; font-size:0.78rem;">
+                {{ m_rolls|length }} roll{{ 's' if m_rolls|length != 1 }} ▾
+              </a>
+              <div class="collapse" id="rolls-{{ m.id }}">
+                <table class="table table-dark table-sm table-bordered mt-1 mb-0" style="font-size:0.78rem;">
+                  <thead>
+                    <tr>
+                      <th class="text-white opacity-75">Day</th>
+                      <th class="text-white opacity-75">d20</th>
+                      <th class="text-white opacity-75">Total</th>
+                      <th class="text-white opacity-75">DC</th>
+                      <th class="text-white opacity-75">Result</th>
+                      <th class="text-white opacity-75">Earned</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for r in m_rolls %}
+                    <tr>
+                      <td>{% if r.is_final %}<em>Final</em>{% else %}{{ r.day_number }}{% endif %}</td>
+                      <td>{{ r.d20_roll }}</td>
+                      <td class="fw-semibold">{{ r.total_check }}</td>
+                      <td>{{ r.dc }}</td>
+                      <td>
+                        {% if r.is_final %}
+                          {% if r.met_dc %}<span class="text-success">Success</span>
+                          {% elif r.total_check >= r.dc - 4 %}<span class="text-warning">Failed</span>
+                          {% else %}<span class="text-danger">Damaged</span>{% endif %}
+                        {% elif r.met_dc %}<span class="text-success">Pass</span>
+                        {% else %}<span class="text-danger">Fail</span>{% endif %}
+                      </td>
+                      <td>{% if r.credits_earned %}{{ r.credits_earned }} cr{% else %}—{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {% endif %}
           </li>
           {% endfor %}
         </ul>
@@ -97,6 +154,50 @@
             {{ pct }}%
           </div>
         </div>
+
+        {% set rolls = roll_history.get(ip.mod_name, []) %}
+        {% if rolls %}
+        <h6 class="text-white mb-2">Roll History</h6>
+        <div class="table-responsive mb-3">
+          <table class="table table-dark table-sm table-bordered mb-0" style="font-size: 0.82rem;">
+            <thead>
+              <tr>
+                <th class="text-white opacity-75">Day</th>
+                <th class="text-white opacity-75">d20</th>
+                <th class="text-white opacity-75">Mod</th>
+                <th class="text-white opacity-75">Sit.</th>
+                <th class="text-white opacity-75">Total</th>
+                <th class="text-white opacity-75">DC</th>
+                <th class="text-white opacity-75">Result</th>
+                <th class="text-white opacity-75">Earned</th>
+                <th class="text-white opacity-75">Remaining</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rolls %}
+              <tr>
+                <td>{% if r.is_final %}<em>Final</em>{% else %}{{ r.day_number }}{% endif %}</td>
+                <td>{{ r.d20_roll }}</td>
+                <td>{{ '%+d' % r.skill_modifier }}</td>
+                <td>{{ '%+d' % r.situational_bonus if r.situational_bonus != 0 else '—' }}</td>
+                <td class="fw-semibold">{{ r.total_check }}</td>
+                <td>{{ r.dc }}</td>
+                <td>
+                  {% if r.is_final %}
+                    {% if r.met_dc %}<span class="text-success">Success</span>
+                    {% elif r.total_check >= r.dc - 4 %}<span class="text-warning">Failed</span>
+                    {% else %}<span class="text-danger">Damaged</span>{% endif %}
+                  {% elif r.met_dc %}<span class="text-success">Pass</span>
+                  {% else %}<span class="text-danger">Fail</span>{% endif %}
+                </td>
+                <td>{% if r.credits_earned %}{{ r.credits_earned }} cr{% else %}—{% endif %}</td>
+                <td>{% if r.remaining_after is not none %}{{ r.remaining_after }} cr{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
 
         <form method="POST" action="{{ url_for('update_skill', weapon_id=weapon.id) }}"
               class="d-flex align-items-end gap-3 mb-4">

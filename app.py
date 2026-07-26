@@ -49,6 +49,7 @@ class DBWeapon(db.Model):
     weapon_type = db.Column(db.String(50), nullable=False)
     base_cost = db.Column(db.Integer, nullable=False)
     personalized = db.Column(db.Boolean, default=False)
+    skill_modifier = db.Column(db.Integer, default=0, nullable=False, server_default="0")
     created_at = db.Column(db.DateTime, default=_utcnow)
 
     applied_mods = db.relationship(
@@ -112,6 +113,24 @@ class DBInProgressMod(db.Model):
     started_at = db.Column(db.DateTime, default=_utcnow)
 
 
+class DBRollHistory(db.Model):
+    __tablename__ = "roll_history"
+    id = db.Column(db.Integer, primary_key=True)
+    weapon_id = db.Column(db.Integer, db.ForeignKey("weapon.id"), nullable=False)
+    mod_name = db.Column(db.String(50), nullable=False)
+    day_number = db.Column(db.Integer, nullable=True)   # None for final check
+    d20_roll = db.Column(db.Integer, nullable=False)
+    skill_modifier = db.Column(db.Integer, nullable=False)
+    situational_bonus = db.Column(db.Integer, nullable=False)
+    total_check = db.Column(db.Integer, nullable=False)
+    dc = db.Column(db.Integer, nullable=False)
+    met_dc = db.Column(db.Boolean, nullable=False)
+    credits_earned = db.Column(db.Integer, default=0)
+    remaining_after = db.Column(db.Integer, nullable=True)
+    is_final = db.Column(db.Boolean, default=False)
+    rolled_at = db.Column(db.DateTime, default=_utcnow)
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -143,6 +162,15 @@ def weapon_detail(weapon_id):
     weapon = db.get_or_404(DBWeapon, weapon_id)
     rules_weapon = weapon.to_rules_weapon()
     available_mods = [m for m in Mod if rules_weapon.can_apply(m)[0]]
+
+    all_rolls = (DBRollHistory.query
+                 .filter_by(weapon_id=weapon_id)
+                 .order_by(DBRollHistory.rolled_at)
+                 .all())
+    roll_history: dict[str, list] = {}
+    for r in all_rolls:
+        roll_history.setdefault(r.mod_name, []).append(r)
+
     return render_template(
         "weapon_detail.html",
         weapon=weapon,
@@ -150,6 +178,7 @@ def weapon_detail(weapon_id):
         mod_stat_changes=MOD_STAT_CHANGES,
         Mod=Mod,
         ONCE_PER_WEAPON=ONCE_PER_WEAPON,
+        roll_history=roll_history,
     )
 
 
@@ -202,6 +231,19 @@ def start_mod(weapon_id):
 
 
 
+@app.route("/weapon/<int:weapon_id>/skill", methods=["POST"])
+def update_weapon_skill(weapon_id):
+    weapon = db.get_or_404(DBWeapon, weapon_id)
+    new_modifier = int(request.form["skill_modifier"])
+    old_modifier = weapon.skill_modifier
+    weapon.skill_modifier = new_modifier
+    if weapon.in_progress:
+        weapon.in_progress.skill_modifier = new_modifier  # type: ignore[union-attr]
+    db.session.commit()
+    flash(f"Skill modifier updated from +{old_modifier} to +{new_modifier}.")
+    return redirect(url_for("weapon_detail", weapon_id=weapon_id))
+
+
 @app.route("/weapon/<int:weapon_id>/mod/skill", methods=["POST"])
 def update_skill(weapon_id):
     weapon = db.get_or_404(DBWeapon, weapon_id)
@@ -212,6 +254,7 @@ def update_skill(weapon_id):
     new_modifier = int(request.form["skill_modifier"])
     old_modifier = ip.skill_modifier
     ip.skill_modifier = new_modifier
+    weapon.skill_modifier = new_modifier
     db.session.commit()
     flash(f"Skill modifier updated from +{old_modifier} to +{new_modifier}.")
     return redirect(url_for("weapon_detail", weapon_id=weapon_id))
@@ -230,7 +273,9 @@ def roll_day(weapon_id):
     met, check_result, progress = resolve_one_day(d20, ip.skill_modifier, ip.dc, situational)
 
     ip.day_count += 1
+    credits_earned = 0
     if met:
+        credits_earned = min(progress, ip.remaining_credits)
         ip.remaining_credits = max(0, ip.remaining_credits - progress)
         if ip.remaining_credits == 0:
             flash(f"Day {ip.day_count}: check {check_result}, progress {progress} cr — work complete! Make your final check.")
@@ -239,6 +284,20 @@ def roll_day(weapon_id):
     else:
         flash(f"Day {ip.day_count}: check {check_result} failed DC {ip.dc}. No progress today.")
 
+    db.session.add(DBRollHistory(
+        weapon_id=weapon_id,
+        mod_name=ip.mod_name,
+        day_number=ip.day_count,
+        d20_roll=d20,
+        skill_modifier=ip.skill_modifier,
+        situational_bonus=situational,
+        total_check=check_result,
+        dc=ip.dc,
+        met_dc=met,
+        credits_earned=credits_earned,
+        remaining_after=ip.remaining_credits,
+        is_final=False,
+    ))
     db.session.commit()
     return redirect(url_for("weapon_detail", weapon_id=weapon_id))
 
@@ -259,7 +318,22 @@ def final_check(weapon_id):
     check_result = d20 + ip.skill_modifier + situational
     mod_name = ip.mod_name
     dc = ip.dc
+    skill_modifier = ip.skill_modifier
 
+    db.session.add(DBRollHistory(
+        weapon_id=weapon_id,
+        mod_name=mod_name,
+        day_number=None,
+        d20_roll=d20,
+        skill_modifier=skill_modifier,
+        situational_bonus=situational,
+        total_check=check_result,
+        dc=dc,
+        met_dc=(check_result >= dc),
+        credits_earned=0,
+        remaining_after=None,
+        is_final=True,
+    ))
     db.session.delete(ip)
     if check_result >= dc:
         db.session.add(DBAppliedMod(weapon_id=weapon.id, mod_name=mod_name))
