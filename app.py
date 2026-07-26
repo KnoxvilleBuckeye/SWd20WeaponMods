@@ -34,6 +34,9 @@ if _db_url.startswith("sqlite:///") and not _db_url.startswith("sqlite:////"):
 app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+if _db_url.startswith("sqlite"):
+    from sqlalchemy.pool import NullPool
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": NullPool}
 
 db = SQLAlchemy(app)
 
@@ -243,21 +246,6 @@ def update_weapon_skill(weapon_id):
     flash(f"Skill modifier updated from +{old_modifier} to +{new_modifier}.")
     return redirect(url_for("weapon_detail", weapon_id=weapon_id))
 
-
-@app.route("/weapon/<int:weapon_id>/mod/skill", methods=["POST"])
-def update_skill(weapon_id):
-    weapon = db.get_or_404(DBWeapon, weapon_id)
-    ip = weapon.in_progress
-    if not ip:
-        flash("No modification in progress.")
-        return redirect(url_for("weapon_detail", weapon_id=weapon_id))
-    new_modifier = int(request.form["skill_modifier"])
-    old_modifier = ip.skill_modifier
-    ip.skill_modifier = new_modifier
-    weapon.skill_modifier = new_modifier
-    db.session.commit()
-    flash(f"Skill modifier updated from +{old_modifier} to +{new_modifier}.")
-    return redirect(url_for("weapon_detail", weapon_id=weapon_id))
 
 
 @app.route("/weapon/<int:weapon_id>/mod/roll", methods=["POST"])

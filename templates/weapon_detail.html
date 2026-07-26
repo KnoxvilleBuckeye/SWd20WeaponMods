@@ -199,16 +199,6 @@
         </div>
         {% endif %}
 
-        <form method="POST" action="{{ url_for('update_skill', weapon_id=weapon.id) }}"
-              class="d-flex align-items-end gap-3 mb-4">
-          <div>
-            <label class="form-label mb-1 small text-white opacity-75">Update skill modifier</label>
-            <input type="number" name="skill_modifier" value="{{ ip.skill_modifier }}"
-                   class="form-control bg-dark text-white border-secondary" style="width: 110px" required>
-          </div>
-          <button class="btn btn-outline-light btn-sm">Save</button>
-        </form>
-
         {% if ip.remaining_credits > 0 %}
         <h6 class="text-white">Day {{ ip.day_count + 1 }} — Daily Check</h6>
         <div class="d-flex gap-3 align-items-end mb-4 flex-wrap">

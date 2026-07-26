@@ -16,7 +16,7 @@
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       {% for msg in messages %}
-      <div class="alert alert-secondary border-warning text-light mb-3">{{ msg }}</div>
+      <div class="alert border-warning text-light mb-3" style="background-color: #1a1a1a;">{{ msg }}</div>
       {% endfor %}
     {% endif %}
   {% endwith %}

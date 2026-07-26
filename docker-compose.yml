@@ -6,6 +6,9 @@ services:
     volumes:
       - ./data:/app/data
       - ./templates:/app/templates
+      - ./app.py:/app/app.py
+      - ./swd20weaponmod.py:/app/swd20weaponmod.py
     environment:
       - DATABASE_URL=sqlite:////app/data/weapons.db
+      - FLASK_DEBUG=1
     restart: unless-stopped
