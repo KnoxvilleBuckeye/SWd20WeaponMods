@@ -113,6 +113,8 @@
     </a>
     {% elif weapon.slots_remaining == 0 and not weapon.in_progress %}
     <div class="alert alert-success py-2">Modification limit reached.</div>
+    {% elif weapon.in_progress %}
+    <div class="alert alert-warning py-2 mb-0">Finish or abandon the in-progress modification (see right) to start another.</div>
     {% endif %}
   </div>
 
